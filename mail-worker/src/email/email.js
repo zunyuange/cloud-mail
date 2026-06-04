@@ -9,7 +9,7 @@ import { emailConst, isDel, settingConst } from '../const/entity-const';
 import emailUtils from '../utils/email-utils';
 import roleService from '../service/role-service';
 import userService from '../service/user-service';
-import telegramService from '../service/telegram-service';
+import potatoService from '../service/potato-service';
 import aiService from '../service/ai-service';
 
 export async function email(message, env, ctx) {
@@ -157,9 +157,9 @@ export async function email(message, env, ctx) {
 
 		}
 
-		//转发到TG
+		//转发到Potato
 		if (tgBotStatus === settingConst.tgBotStatus.OPEN && tgChatId) {
-			await telegramService.sendEmailToBot({ env }, emailRow)
+			await potatoService.sendEmailToBot({ env }, emailRow)
 		}
 
 		//转发到其他邮箱

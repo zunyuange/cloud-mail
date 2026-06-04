@@ -1,6 +1,6 @@
 import emailUtils from '../utils/email-utils';
 
-const TELEGRAM_MESSAGE_LIMIT = 3500;
+const POTATO_MESSAGE_LIMIT = 3500;
 const TRUNCATED_SUFFIX = '...';
 
 function escapeHtml(text = '') {
@@ -53,7 +53,7 @@ To：\u200B${escapeHtml(email.toEmail || '')}`
 		const prefix = `${template}
 
 `;
-		const maxTextLength = Math.max(0, TELEGRAM_MESSAGE_LIMIT - prefix.length);
+		const maxTextLength = Math.max(0, POTATO_MESSAGE_LIMIT - prefix.length);
 		template += `
 
 ${truncateText(text, maxTextLength)}`

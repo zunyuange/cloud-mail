@@ -18,6 +18,6 @@ import '../api/init-api'
 import '../api/analysis-api'
 import '../api/reg-key-api'
 import '../api/public-api'
-import '../api/telegram-api'
+import '../api/potato-api'
 import '../api/oauth-api'
 export default app;

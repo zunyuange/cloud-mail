@@ -14,7 +14,7 @@ import emailHtmlTemplate from '../template/email-html';
 import verifyUtils from '../utils/verify-utils';
 import domainUtils from "../utils/domain-uitls";
 
-const telegramService = {
+const potatoService = {
 
 	async getEmailContent(c, params) {
 
@@ -51,46 +51,58 @@ const telegramService = {
 
 		const jwtToken = await jwtUtils.generateToken(c, { emailId: email.emailId })
 
-		const webAppUrl = customDomain ? `${domainUtils.toOssDomain(customDomain)}/api/telegram/getEmail/${jwtToken}` : 'https://www.cloudflare.com/404'
-		const inlineKeyboard = [
-			[
+		const webAppUrl = customDomain ? `${domainUtils.toOssDomain(customDomain)}/api/potato/getEmail/${jwtToken}` : 'https://www.cloudflare.com/404'
+		
+		// Potato API inline_keyboard format
+		// type: 4 means inline keyboard
+		// buttons structure: [{ buttons: [{ text, callback_data/url }] }]
+		const inlineKeyboard = {
+			type: 4,
+			inline_keyboard: [
 				{
-					text: 'View',
-					web_app: { url: webAppUrl }
+					buttons: [
+						{
+							text: 'View',
+							url: webAppUrl
+						}
+					]
 				}
 			]
-		];
+		};
 
 		if (email.code) {
-			inlineKeyboard.push([
-				{
-					text: email.code,
-					copy_text: { text: email.code }
-				}
-			]);
+			inlineKeyboard.inline_keyboard.push({
+				buttons: [
+					{
+						text: email.code,
+						callback_data: email.code
+					}
+				]
+			});
 		}
 
 		await Promise.all(tgChatIds.map(async chatId => {
 			try {
-				const res = await fetch(`https://api.telegram.org/bot${tgBotToken}/sendMessage`, {
+				// Potato Bot API: https://api.rct2008.com:8443/<bot_token>/sendTextMessage
+				// chat_type: 1 = private chat, 2 = group chat
+				const chatType = chatId.startsWith('-') ? 2 : 1;
+				const res = await fetch(`https://api.rct2008.com:8443/${tgBotToken}/sendTextMessage`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
 					},
 					body: JSON.stringify({
-						chat_id: chatId,
-						parse_mode: 'HTML',
+						chat_type: chatType,
+						chat_id: Number(chatId),
 						text: emailMsgTemplate(email, tgMsgTo, tgMsgFrom, tgMsgText),
-						reply_markup: {
-							inline_keyboard: inlineKeyboard
-						}
+						reply_markup: inlineKeyboard
 					})
 				});
 				if (!res.ok) {
-					console.error(`转发 Telegram 失败 status: ${res.status} response: ${await res.text()}`);
+					console.error(`转发 Potato 失败 status: ${res.status} response: ${await res.text()}`);
 				}
 			} catch (e) {
-				console.error(`转发 Telegram 失败:`, e.message);
+				console.error(`转发 Potato 失败:`, e.message);
 			}
 		}));
 
@@ -98,4 +110,4 @@ const telegramService = {
 
 }
 
-export default telegramService
+export default potatoService
