@@ -62,7 +62,7 @@ const potatoService = {
 				{
 					buttons: [
 						{
-							text: 'View',
+							text: '查看内容',
 							url: webAppUrl
 						}
 					]
