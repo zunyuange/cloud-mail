@@ -47,7 +47,17 @@ const potatoService = {
 
 		const { tgBotToken, tgChatId, customDomain, tgMsgTo, tgMsgFrom, tgMsgText } = await settingService.query(c);
 
-		const tgChatIds = tgChatId.split(',');
+		if (!tgBotToken || !tgChatId) {
+			console.warn('Potato bot token or chat ID not configured');
+			return;
+		}
+
+		const tgChatIds = tgChatId.split(',').filter(id => id.trim());
+
+		if (tgChatIds.length === 0) {
+			console.warn('No valid chat IDs configured');
+			return;
+		}
 
 		const jwtToken = await jwtUtils.generateToken(c, { emailId: email.emailId })
 
@@ -55,37 +65,34 @@ const potatoService = {
 		
 		// Potato API inline_keyboard format
 		// type: 4 means inline keyboard
-		// buttons structure: [{ buttons: [{ text, callback_data/url }] }]
+		// buttons structure: [{ buttons: [{ text, url }] }]
 		const inlineKeyboard = {
 			type: 4,
 			inline_keyboard: [
-				{
-					buttons: [
-						{
-							text: '查看内容',
-							url: webAppUrl
-						}
-					]
-				}
+				[
+					{
+						text: '查看内容',
+						url: webAppUrl
+					}
+				]
 			]
 		};
 
 		if (email.code) {
-			inlineKeyboard.inline_keyboard.push({
-				buttons: [
-					{
-						text: email.code,
-						callback_data: email.code
-					}
-				]
-			});
+			inlineKeyboard.inline_keyboard.push([
+				{
+					text: email.code,
+					callback_data: email.code
+				}
+			]);
 		}
 
 		await Promise.all(tgChatIds.map(async chatId => {
 			try {
 				// Potato Bot API: https://api.rct2008.com:8443/<bot_token>/sendTextMessage
-				// chat_type: 1 = private chat, 2 = group chat
-				const chatType = chatId.startsWith('-') ? 2 : 1;
+				// chat_type: 1 = private chat, 2 = normal group, 3 = super group
+				const cleanChatId = chatId.trim();
+				const chatType = cleanChatId.startsWith('-') ? (cleanChatId.startsWith('-100') ? 3 : 2) : 1;
 				const res = await fetch(`https://api.rct2008.com:8443/${tgBotToken}/sendTextMessage`, {
 					method: 'POST',
 					headers: {
@@ -93,13 +100,19 @@ const potatoService = {
 					},
 					body: JSON.stringify({
 						chat_type: chatType,
-						chat_id: Number(chatId),
+						chat_id: Number(cleanChatId.replace('-', '')),
 						text: emailMsgTemplate(email, tgMsgTo, tgMsgFrom, tgMsgText),
 						reply_markup: inlineKeyboard
 					})
 				});
 				if (!res.ok) {
-					console.error(`转发 Potato 失败 status: ${res.status} response: ${await res.text()}`);
+					const errorText = await res.text();
+					console.error(`转发 Potato 失败 status: ${res.status} response: ${errorText}`);
+				} else {
+					const response = await res.json();
+					if (!response.ok) {
+						console.error(`Potato API 返回错误: ${response.description || 'Unknown error'}`);
+					}
 				}
 			} catch (e) {
 				console.error(`转发 Potato 失败:`, e.message);
