@@ -4,6 +4,7 @@ const POTATO_MESSAGE_LIMIT = 3500;
 const TRUNCATED_SUFFIX = '...';
 
 function escapeHtml(text = '') {
+	if (!text) return '';
 	return text
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;');
@@ -23,36 +24,36 @@ function truncateText(text, maxLength) {
 
 export default function emailMsgTemplate(email, tgMsgTo, tgMsgFrom, tgMsgText) {
 
-	let template = `标题：${escapeHtml(email.subject || '')}`
+	let template = `<b>${escapeHtml(email.subject || '')}</b>`
 
 	if (tgMsgFrom === 'only-name') {
 		template += `
+
 发件人：${escapeHtml(email.name || '')}`
 	}
 
 	if (tgMsgFrom === 'show') {
 		template += `
+
 发件人：${escapeHtml(email.name || '')}
 发件邮箱：${escapeHtml(email.sendEmail || '')}`
 	}
 
-	if(tgMsgTo === 'show' && tgMsgFrom === 'hide') {
+	if(tgMsgTo === 'show') {
 		template += `
-收件邮箱：${escapeHtml(email.toEmail || '')}`
 
-	} else if(tgMsgTo === 'show') {
-		template += `
 收件邮箱：${escapeHtml(email.toEmail || '')}`
 	}
 
-	const text = escapeHtml(emailUtils.formatText(email.text) || emailUtils.htmlToText(email.content));
-
 	if(tgMsgText === 'show') {
-		const prefix = `${template}
-`;
-		const maxTextLength = Math.max(0, POTATO_MESSAGE_LIMIT - prefix.length);
-		template += `
-邮箱内容：${truncateText(text, maxTextLength)}`
+		const text = emailUtils.formatText(email.text) || emailUtils.htmlToText(email.content);
+		if (text) {
+			const prefix = `${template}\n`;
+			const maxTextLength = Math.max(0, POTATO_MESSAGE_LIMIT - prefix.length);
+			template += `
+
+${truncateText(text, maxTextLength)}`
+		}
 	}
 
 	return template;
